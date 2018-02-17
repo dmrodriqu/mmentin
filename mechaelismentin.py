@@ -11,6 +11,12 @@ class Enzyme:
     def __init__(self):
         self.allosites = 1
         self.servicerate = 0
+        self.busy = False
+        self.queue = self.initializeEnzyme
+
+    def initializeEnzyme(self):
+        q = que()
+        return q
 
 class Clock:
     def __init__(self):
@@ -46,6 +52,48 @@ class Environment:
     def updateClock(self):
         event = hp.heappop(self.cal)
         self.clockacc(event.etime)
+        return event.etype
+
+    def scheduleEvent(self, etype):
+        curtime = self.clock
+        arrtime = curtime + np.random.exponential(1)
+        event = Estruct(etype,arrtime)
+        return event
+
+
+    def handleArrival(self):
+        aevent = self.scheduleEvent(0)
+        if (self.es.busy == True):
+            # mutual exclusion
+            self.ep.busy = False
+        if (self.ep.busy == False):
+            # mutual exclusion
+            self.ep.busy = True
+            hp.heappush(self.cal, aevent)
+            # set delay to 0
+            # add 1 to number of delayed
+            # make busy
+            # schedule departure
+            devent = self.scheduleEvent(1)
+            hp.heappush(self.cal, devent)
+
+    def handleDeparture(self):
+        # queue empty
+            #
+        # queue non empty
+            # subtract 1 from queue
+            # compute delay
+            # add 1 to # of delay
+            # schedule departure
+            devent = self.scheduleEvent(1)
+            hp.heappush(self.cal, devent)
+
+    def handleEstoEp(self):
+        self.substrate -= 1
+
+    def handleEptoEs(self):
+        self.product -= 1
+
 
     def runSim(self):
         self.initializeEnvironment()
@@ -53,10 +101,23 @@ class Environment:
         first = Estruct(0, np.random.exponential(1))
         hp.heappush(self.cal, first)
         while (i<10):
-            hp.heappush(self.cal, first)
-            self.updateClock()
+            mtype = self.updateClock()
+            print self.es.busy
+            print self.ep.busy
             print self.clock
+            # substrate or product
+            if(mtype == 0):
+                # handle arrival
+                self.handleArrival()
+                # handle departure
+            # es to ep
+            if(mtype == 1):
+                # handle arrival
+                self.handleDeparture()
+                # handle departure
+
+            # ep to es
             i+=1
 
-env = Environment(100,100,1000)
+env = Environment(100,0,1000)
 env.runSim()
