@@ -1,5 +1,5 @@
 import heapq as hp
-import Queue as que
+import Queue
 import numpy as np
 
 class Estruct:
@@ -12,11 +12,12 @@ class Enzyme:
         self.allosites = 1
         self.servicerate = 0
         self.busy = False
-        self.queue = self.initializeEnzyme
+        self.queue = None
+        self.initializeEnzyme()
 
     def initializeEnzyme(self):
-        q = que()
-        return q
+        q = Queue.Queue(maxsize = 1)
+        self.queue = q
 
 class Clock:
     def __init__(self):
@@ -52,6 +53,8 @@ class Environment:
     def updateClock(self):
         event = hp.heappop(self.cal)
         self.clockacc(event.etime)
+        print event.etype
+        print event.etime
         return event.etype
 
     def scheduleEvent(self, etype):
@@ -63,13 +66,17 @@ class Environment:
 
     def handleArrival(self):
         aevent = self.scheduleEvent(0)
+        hp.heappush(self.cal, aevent)
         if (self.es.busy == True):
             # mutual exclusion
+            self.es.queue.put(aevent)
+            if (Queue.Full(self.es.queue)):
+                print "no!"
             self.ep.busy = False
         if (self.ep.busy == False):
             # mutual exclusion
+            self.es.busy = True
             self.ep.busy = True
-            hp.heappush(self.cal, aevent)
             # set delay to 0
             # add 1 to number of delayed
             # make busy
@@ -102,9 +109,6 @@ class Environment:
         hp.heappush(self.cal, first)
         while (i<10):
             mtype = self.updateClock()
-            print self.es.busy
-            print self.ep.busy
-            print self.clock
             # substrate or product
             if(mtype == 0):
                 # handle arrival
